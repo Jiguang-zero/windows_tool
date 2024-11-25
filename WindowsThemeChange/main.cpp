@@ -5,7 +5,7 @@
 #include <windows.h>
 #include <iostream>
 #include <winrt/Windows.UI.ViewManagement.h>
-#include "utils/logger/Logger.h"
+#include "../utils/logger/Logger.h"
 
 void changeTheme(const bool isDark) {
     // ´ò¿ª×¢²á±í
