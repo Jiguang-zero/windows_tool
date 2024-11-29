@@ -8,5 +8,15 @@ add_executable(WindowsThemeChange WindowsThemeChange/main.cpp
         utils/logger/Logger.cpp
         utils/logger/Logger.h
         utils/myDate/myDate.cpp
-        utils/myDate/myDate.h)
+        utils/myDate/myDate.h
+)
+
+add_executable(WindowsChangeWifi WindowsChangeWifi/main.cpp
+        WindowsChangeWifi/utils/CDefer.cpp
+        WindowsChangeWifi/utils/CDefer.h
+        WindowsChangeWifi/configs.cpp
+        WindowsChangeWifi/configs.h
+        WindowsChangeWifi/ApSsidInstance.cpp
+        WindowsChangeWifi/ApSsidInstance.h
+)
 
