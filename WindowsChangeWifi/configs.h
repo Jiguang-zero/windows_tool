@@ -9,7 +9,7 @@
 
 namespace windows::wifi {
 
-    class configs : Singleton<configs> {
+    class configs : public Singleton<configs> {
     public:
         // set basic configs of the application of WindowsChangeWifi
         void applyConfigs() const;

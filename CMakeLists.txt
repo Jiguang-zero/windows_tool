@@ -18,5 +18,8 @@ add_executable(WindowsChangeWifi WindowsChangeWifi/main.cpp
         WindowsChangeWifi/configs.h
         WindowsChangeWifi/ApSsidInstance.cpp
         WindowsChangeWifi/ApSsidInstance.h
+        WindowsChangeWifi/SelfWifi.cpp
+        WindowsChangeWifi/SelfWifi.h
 )
+target_link_libraries(WindowsChangeWifi wlanapi)
 
