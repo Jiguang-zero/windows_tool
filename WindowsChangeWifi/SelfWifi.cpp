@@ -4,6 +4,7 @@
 
 #include "SelfWifi.h"
 
+#include <iomanip>
 #include <utility>
 
 namespace windows::wifi {
@@ -44,5 +45,12 @@ namespace windows::wifi {
 
     void SelfWifi::setQuality(const int _quality) {
         quality = _quality;
+    }
+
+    std::ostream & operator<<(std::ostream & os, const SelfWifi &wifi) {
+        os << "(" << wifi.getQuality() << "%)" << std::setw(4) << " ";
+        os << std::setw(30) << wifi.getName() << " ";
+
+        return os;
     }
 }

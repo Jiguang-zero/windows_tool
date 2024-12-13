@@ -5,7 +5,7 @@
 #ifndef SELF_WIFI_H
 #define SELF_WIFI_H
 
-#include <string>
+#include <iostream>
 
 namespace windows::wifi {
 
@@ -16,11 +16,6 @@ public:
 
     SelfWifi(std::string _name, int _quality);
 
-    // we do not need to use them.
-    SelfWifi(const SelfWifi&) = delete;
-    SelfWifi& operator = (const SelfWifi&) = delete;
-    SelfWifi& operator = (const SelfWifi&&) = delete; // rvalue reference
-
     [[nodiscard]] std::string getName() const;
     [[nodiscard]] int getQuality() const;
 
@@ -30,6 +25,8 @@ public:
     bool operator <= (const SelfWifi& other) const;
     bool operator >= (const SelfWifi& other) const;
 
+    friend std::ostream& operator << (std::ostream& os, const SelfWifi& wifi);
+
 private:
     std::string name;
     int quality; // the Wi-Fi quality, and the higher the value, the better the signal
@@ -38,6 +35,13 @@ private:
     // should not be used outside.
     [[maybe_unused]] void setQuality(int _quality);
 };
+
+    struct _MaxComparatorSelfWifi { // NOLINT(*-reserved-identifier)
+        // left hand side, right hand side
+        bool operator()(const SelfWifi& lhs, const SelfWifi& rhs) const {
+            return lhs > rhs;
+        }
+    };
 
 } // wifi
 // windows

@@ -5,6 +5,8 @@
 #include "ApSsidInstance.h"
 #include "utils/CDefer.h"
 
+#include <iomanip>
+
 namespace windows::wifi {
     bool ApSsidInstance::InitialHandle() {
         DWORD dwCurVersion = 0;
@@ -120,10 +122,9 @@ namespace windows::wifi {
                 PWLAN_AVAILABLE_NETWORK pBssEntry = &pBssList->Network[j];
 
                 if (auto temp = std::string(reinterpret_cast<char*>(pBssEntry->dot11Ssid.ucSSID));
-                    !temp.empty() && pBssEntry->bNetworkConnectable) {
-                    ssidList.emplace_back(temp);
-                    std::cout << "wifi name: " << temp;
-                    std::cout << " quality: " << pBssEntry->wlanSignalQuality << std::endl;
+                    !temp.empty() /* && pBssEntry->bNetworkConnectable */) {
+                    SelfWifi wifi(temp, static_cast<int>(pBssEntry->wlanSignalQuality));
+                    ssidList.insert(wifi);
                 }
             }
         }
@@ -135,8 +136,13 @@ namespace windows::wifi {
         const int ssidListNumber = static_cast<int>(ssidList.size());
 
         std::cout << "There are " << ssidListNumber << " Wifi you can choose" << std::endl;
-        for (int i = 0; i < ssidListNumber; i ++ ) {
-            std::cout << i + 1 << ": " << ssidList[i] << std::endl;
+        int i = 0;
+        for (const auto & ssid : ssidList) {
+            std::cout << std::right;
+            std::cout << std::setw(5) << ++i << ". ";
+
+            std::cout << std::left;
+            std::cout << ssid << std::endl;
         }
     }
 }

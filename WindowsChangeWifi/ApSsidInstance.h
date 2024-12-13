@@ -6,17 +6,19 @@
 #define AP_SSID_INSTANCE_H
 
 #include "../utils/Singleton.h"
+#include "SelfWifi.h"
 
 #include <windows.h>
 #include <mutex>
 #include <condition_variable>
+#include <set>
 #include <wlanapi.h>
-#include <unordered_map>
 
 namespace windows::wifi {
     void OnNotificationCallback(PWLAN_NOTIFICATION_DATA data, PVOID context);
 
     void freeMemory(PWLAN_AVAILABLE_NETWORK_LIST& pBssList, PWLAN_INTERFACE_INFO_LIST& pIfList);
+
 
     class ApSsidInstance : public Singleton<ApSsidInstance> {
     public:
@@ -38,7 +40,7 @@ namespace windows::wifi {
         std::condition_variable cv;
 
         // WIFI list
-        std::vector<std::string> ssidList;
+        std::set<SelfWifi, _MaxComparatorSelfWifi> ssidList;
     };
 
 }
