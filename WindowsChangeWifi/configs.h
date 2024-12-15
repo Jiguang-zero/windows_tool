@@ -7,6 +7,8 @@
 
 #include "../utils/Singleton.h"
 
+#include <windows.h>
+
 namespace windows::wifi {
 
     class configs : public Singleton<configs> {
@@ -28,6 +30,9 @@ namespace windows::wifi {
     private:
         bool utf8Encoded = true;
     };
+
+    // winerror.h 的错误消息字符串化
+    std::wstring GetErrorMessage(DWORD errorCode);
 
 }
 
