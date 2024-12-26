@@ -10,7 +10,7 @@
 void changeTheme(const bool isDark) {
     // 打开注册表
     HKEY hKey;
-    LOG << "打开注册表";
+    LOG << "打开注册表" << utils::endl;
     if (const auto regPath = L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"; RegOpenKeyExW(HKEY_CURRENT_USER, regPath, 0, KEY_SET_VALUE, &hKey) == ERROR_SUCCESS) {
         const auto systemValueName = L"SystemUsesLightTheme";
         const auto valueName = L"AppsUseLightTheme";
@@ -24,11 +24,11 @@ void changeTheme(const bool isDark) {
 
         // 关闭注册表
         RegCloseKey(hKey);
-        LOG << "关闭注册表";
+        LOG_LINE("关闭注册表");
 
-        LOG << "Change Theme Successfully";
+        LOG_LINE("Change Theme Successfully");
     } else {
-        LOG << "Change Theme Failed.";
+        LOG_LINE("Change Theme Failed.");
     }
 }
 
@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
     const bool currentThemeIsDark = themeIsDark();
     std::cout << "Current theme is " << (currentThemeIsDark ? "Dark" : "Light") << std::endl;
     const std::string currentTheme = std::string("Current theme: ") + (currentThemeIsDark ? "Dark" : "Light");
-    LOG << currentTheme;
+    LOG_LINE(currentTheme);
 
     changeTheme(currentThemeIsDark);
 

@@ -10,8 +10,12 @@
 
 #include "../myDate/myDate.h"
 
-const char* Logger::LOG_FILE = "log/log.txt";
+const char* Logger::LOG_FILE = "log/log.log";
 const char* Logger::LOG_PATH = "log";
+
+namespace utils {
+    const LoggerFormat endl("\n");
+}
 
 std::string getFullTimeForLog() {
     std::ostringstream oss;
@@ -33,11 +37,44 @@ std::string getFullTimeForLog() {
 
 void Logger::info(const std::string &message) {
     std::unique_lock lock(mtx);
-    outFile << getFullTimeForLog() << " " << message << std::endl;
+    {
+        std::unique_lock lock1(endlMtx);
+        if (showTime) {
+            outFile << getFullTimeForLog();
+            showTime = false;
+        }
+    }
+    outFile << " " << message;
+}
+
+std::string utils::LoggerFormat::ToString() const {
+    return content;
 }
 
 Logger::~Logger() {
     stop();
+}
+
+Logger & Logger::operator<<(const std::string &message) const {
+    _instance->info(message);
+
+    return *_instance;
+}
+
+Logger & Logger::operator<<(const utils::LoggerFormat& format) const {
+    const auto str = format.ToString();
+    _instance->info(str);
+    if (str == "\n") {
+        std::unique_lock lock(_instance->endlMtx);
+        _instance->showTime = true;
+    }
+    return *_instance;
+}
+
+void Logger::writeLine(const std::string &message) {
+    _instance->info(message);
+    _instance->info("\n");
+    showTime = true;
 }
 
 void Logger::start() {
@@ -49,6 +86,7 @@ void Logger::start() {
         }
     }
 
+    // outFile.open(LOG_FILE); // debug模式下不追加
     // 打开文件输出流 追加模式
     outFile.open(LOG_FILE, std::ofstream::app);
     if (!outFile.is_open()) {
