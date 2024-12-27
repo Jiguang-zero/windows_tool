@@ -10,11 +10,12 @@
 
 #include "../myDate/myDate.h"
 
-const char* Logger::LOG_FILE = "log/log.log";
-const char* Logger::LOG_PATH = "log";
+std::string Logger::LOG_FILE = "log.log";
+std::string Logger::LOG_PATH = "log";
 
 namespace utils {
-    const LoggerFormat endl("\n");
+    const LoggerFormat endl("endl", "\n");
+    const LoggerFormat origin("origin", "");
 }
 
 std::string getFullTimeForLog() {
@@ -88,7 +89,7 @@ void Logger::start() {
 
     // outFile.open(LOG_FILE); // debug模式下不追加
     // 打开文件输出流 追加模式
-    outFile.open(LOG_FILE, std::ofstream::app);
+    outFile.open(getLogFileFullPath(), std::ofstream::app);
     if (!outFile.is_open()) {
         std::cerr << "log/log.txt is not open." << std::endl;
     }

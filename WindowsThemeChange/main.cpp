@@ -47,6 +47,7 @@ bool themeIsDark() {
 }
 
 int main(int argc, char** argv) {
+    LOG_PATH(utils::origin, "theme.log");
     const bool currentThemeIsDark = themeIsDark();
     std::cout << "Current theme is " << (currentThemeIsDark ? "Dark" : "Light") << std::endl;
     const std::string currentTheme = std::string("Current theme: ") + (currentThemeIsDark ? "Dark" : "Light");
