@@ -37,15 +37,20 @@ std::string getFullTimeForLog() {
 }
 
 void Logger::info(const std::string &message) {
+
     std::unique_lock lock(mtx);
     {
+        if (!outFile.is_open()) {
+            start();
+        }
         std::unique_lock lock1(endlMtx);
         if (showTime) {
-            outFile << getFullTimeForLog();
+            outFile << "[" << getFullTimeForLog() << "]";
             showTime = false;
         }
+        outFile << " " << message;
+        stop();
     }
-    outFile << " " << message;
 }
 
 std::string utils::LoggerFormat::ToString() const {
@@ -53,6 +58,7 @@ std::string utils::LoggerFormat::ToString() const {
 }
 
 Logger::~Logger() {
+    std::cout << "Logger destructed" << std::endl;
     stop();
 }
 
@@ -76,6 +82,24 @@ void Logger::writeLine(const std::string &message) {
     _instance->info(message);
     _instance->info("\n");
     showTime = true;
+}
+
+std::shared_ptr<Logger> Logger::getInstance() {
+    static std::once_flag s_flag;
+    std::call_once(s_flag, [&]() {
+        _instance = std::make_shared<Logger>();
+        _instance->start();
+    });
+
+    return _instance;
+}
+
+void Logger::clearContent() {
+    outFile.close();
+    outFile.open(getLogFileFullPath());
+    if (!outFile.is_open()) {
+        std::cerr << "cannot open log file." << std::endl;
+    }
 }
 
 void Logger::start() {

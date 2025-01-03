@@ -5,6 +5,7 @@
 #include "ApSsidInstance.h"
 #include "utils/CDefer.h"
 #include "configs.h"
+#include "../utils/logger/Logger.h"
 
 #include <iomanip>
 
@@ -114,7 +115,7 @@ namespace windows::wifi {
         return getNetworkAndInterfaceList(pNetworkList, pIfList, fn);
     }
 
-    bool ApSsidInstance::connectingWifi(const PWLAN_AVAILABLE_NETWORK_LIST &pNetworkList, const std::string &targetSsid, const PWLAN_INTERFACE_INFO &info) const {
+    bool ApSsidInstance::connectingWifi(const PWLAN_AVAILABLE_NETWORK_LIST &pNetworkList, const std::string &targetSsid, const PWLAN_INTERFACE_INFO &info) {
         for (unsigned int j = 0; j < pNetworkList->dwNumberOfItems; ++j) {
             // ReSharper disable once CppUseStructuredBinding
             auto& network = pNetworkList->Network[j];
@@ -128,6 +129,29 @@ namespace windows::wifi {
                 connParams.dot11BssType = network.dot11BssType;
                 connParams.dwFlags = 0;
 
+
+                if (const auto config = configs::getInstance(); config->getAccountdEnteredNeed() || config->getPasswordEnteredNeed()) {
+                    if (profileExisted(info, targetSsid)) {
+                        if (!deleteProfile(info, targetSsid)) {
+                            LOG << "delete false." << ::utils::endl;
+                            return false;
+                        }
+                        LOG << "profile " << targetSsid << " deleted" << ::utils::endl;
+                    }
+                    std::cout << "Please enter the password." << std::endl;
+                    std::string password;
+                    std::cin >> password;
+                    if (const auto file = createProfileXml(targetSsid, password); !setWifiProfile(info, file)) {
+                        return false;
+                    }
+
+                    if (profileExisted(info, targetSsid)) {
+                        LOG << "After setting profile, profile exists." << ::utils::endl;
+                    } else {
+                        LOG << "After setting profile, profile does not exist." << ::utils::endl;
+                    }
+                }
+
                 // ³¢ÊÔÁ¬½Ó
                 if (const auto dwResult = WlanConnect(wlanHandle, &info->InterfaceGuid, &connParams, nullptr); dwResult == ERROR_SUCCESS) {
                     std::cout << "Successfully connected to " << targetSsid << std::endl;
@@ -135,6 +159,7 @@ namespace windows::wifi {
                 } else {
                     std::cerr << "WlanConnect failed with error: ";
                     if (dwResult == ERROR_INVALID_PARAMETER) {
+                        LOG << "connect network error invalid parameter" << ::utils::endl;
                         std::cout << "error invalid parameter." << std::endl;
                     }
                     else {
@@ -164,6 +189,94 @@ namespace windows::wifi {
         }
     }
 
+    // ReSharper disable once CppMemberFunctionMayBeConst
+    bool ApSsidInstance::setWifiProfile(const PWLAN_INTERFACE_INFO &info, const std::string &profile) {
+        auto * strProfileXml = configs::getInstance()->toLPCWSTR(profile);
+        DWORD result = 0;
+        const DWORD dwResult = WlanSetProfile(
+            wlanHandle,
+            &info->InterfaceGuid,
+            0,
+            strProfileXml,
+            nullptr,
+            true,
+            nullptr,
+            &result
+        );
+
+        if (dwResult == ERROR_SUCCESS) {
+            LOG << "set profile success" << ::utils::endl;
+            std::cout << "set profile success." << std::endl;
+            return true;
+        }
+        LOG << "set profile Error." << ::utils::endl;
+        std::cerr << "Set Profile Error." << std::endl;
+        {
+            std::wcout << strProfileXml << std::endl;
+            std::ofstream in("log.xml");
+            if (dwResult == ERROR_INVALID_PARAMETER) {
+                LOG << "set profile invalid parameter" << ::utils::endl;
+            } else {
+                LOG << "set profile return: " << dwResult << " ";
+                switch (dwResult) {
+                    case ERROR_ACCESS_DENIED:
+                        LOG << "error access denied";
+                        break;
+                    case ERROR_ALREADY_EXISTS:
+                        LOG << "error alreaddy exists";
+                        break;
+                    case ERROR_BAD_PROFILE:
+                        LOG << "bad profile";
+                        break;
+                    case ERROR_NO_MATCH:
+                        LOG << "error no match";
+                        break;
+                    default:
+                        LOG << dwResult;
+                        break;
+                }
+                LOG << ::utils::endl;
+            }
+            if (result == WLAN_REASON_CODE_SUCCESS) {
+                LOG << "WLAN REASON success." << ::utils::endl;
+            } else {
+                LOG << "WLAN REASON CODE: " << result << ::utils::endl;
+            }
+            in << profile << std::endl;
+        }
+        delete strProfileXml;
+        return false;
+    }
+
+    bool ApSsidInstance::deleteProfile(const PWLAN_INTERFACE_INFO &info, const std::string &ssid) const {
+        const auto config = configs::getInstance();
+        if (const auto result = WlanDeleteProfile(wlanHandle, &info->InterfaceGuid, config->toLPCWSTR(ssid), nullptr); result == ERROR_SUCCESS) {
+            LOG_LINE("delete profile " + ssid);
+            return true;
+        }
+        return false;
+    }
+
+    bool ApSsidInstance::profileExisted(const PWLAN_INTERFACE_INFO &info, const std::string &ssid) const {
+        const auto config = configs::getInstance();
+        LPWSTR profileXml = nullptr;
+        const DWORD result = WlanGetProfile(wlanHandle, &info->InterfaceGuid,
+                                            config->toLPCWSTR(ssid), nullptr, &profileXml,
+                                            nullptr, nullptr);
+        WlanFreeMemory(profileXml);
+
+        if (result == ERROR_SUCCESS) {
+            LOG << ssid << " profile existed" << ::utils::endl;
+            return true;
+        }
+        if (result == ERROR_NOT_FOUND) {
+            LOG << ssid << " profile not found." << ::utils::endl;
+        } else {
+            LOG << result << " error code whiling tring to get profile.";
+        }
+        return false;
+    }
+
     // ReSharper disable once CppParameterMayBeConst
     void OnNotificationCallback(PWLAN_NOTIFICATION_DATA data, [[maybe_unused]] PVOID context) {
         if (data != nullptr && data->NotificationSource == WLAN_NOTIFICATION_SOURCE_ACM &&
@@ -190,6 +303,10 @@ namespace windows::wifi {
 
     ApSsidInstance::~ApSsidInstance() {
         if (const auto result = WlanCloseHandle(wlanHandle, nullptr); result != ERROR_SUCCESS) {
+            if (result == ERROR_INVALID_PARAMETER) {
+                std::cerr << "Handle Not Initialized." << std::endl;
+                return;
+            }
             std::cerr << "WlanCloseHandle failed with error: " << result << std::endl;
         }
     }

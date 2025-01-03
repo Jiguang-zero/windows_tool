@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.26)
 project(WindowsThemeChange)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXE_LINKER_FLAGS "-static")
 
 add_executable(WindowsThemeChange WindowsThemeChange/main.cpp
@@ -20,6 +20,8 @@ add_executable(WindowsChangeWifi WindowsChangeWifi/main.cpp
         WindowsChangeWifi/ApSsidInstance.h
         WindowsChangeWifi/SelfWifi.cpp
         WindowsChangeWifi/SelfWifi.h
+        utils/logger/Logger.cpp
+        utils/myDate/myDate.cpp
 )
 target_link_libraries(WindowsChangeWifi wlanapi)
 

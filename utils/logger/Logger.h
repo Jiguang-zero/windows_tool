@@ -65,9 +65,9 @@ namespace utils {
 }
 
 // CRTP, 奇异继承模板样式
-class Logger : public Singleton<Logger> {
+class Logger final : public Singleton<Logger> {
 public:
-    ~Logger();
+    ~Logger() override;
 
 private:
     // 全局日志文件的存储
@@ -93,37 +93,7 @@ public:
     Logger &operator <<(const utils::LoggerFormat& format) const;
 
     // 新的日志路径以及名字
-    void static changeFilePath(FilePath auto format, FilePath auto name) {
-        bool flag = false;
-        if (std::is_same_v<utils::LoggerFormat, decltype(format)>) {
-            if (format != utils::origin) {
-                std::cerr << "invalid parameters" << std::endl;
-                LOG_PATH = "log";
-            }
-        } else {
-            LOG_PATH = name;
-            flag = true;
-        }
-        if (std::is_same_v<utils::LoggerFormat, decltype(name)>) {
-            if (name != utils::origin) {
-                std::cerr << "invalid parameters" << std::endl;
-                LOG_FILE = "log.log";
-            }
-        } else {
-            LOG_FILE = name;
-            flag = true;
-        }
-
-        if (!flag) {
-            return;;
-        }
-
-        if (getInstance()->outFile.is_open()) {
-            getInstance()->outFile.close();
-        }
-        getInstance()->start();
-
-    }
+    void static changeFilePath(FilePath auto format, FilePath auto name);
 
     void writeLine(const std::string& message);
 
@@ -139,24 +109,11 @@ public:
         return *_instance;
     }
 
-    static std::shared_ptr<Logger> getInstance() {
-        static std::once_flag s_flag;
-        std::call_once(s_flag, [&]() {
-            _instance = std::make_shared<Logger>();
-            _instance->start();
-        });
-
-        return _instance;
-    }
+    static std::shared_ptr<Logger> getInstance();
 
     // 默认追加模式，现在全部清空日志文件
-    void clearContent() {
-        outFile.close();
-        outFile.open(getLogFileFullPath());
-        if (!outFile.is_open()) {
-            std::cerr << "cannot open log file." << std::endl;
-        }
-    }
+    void clearContent();
+
 private:
     // 打开日志文件 流
     void start();
@@ -171,6 +128,37 @@ private:
     void info(const std::string& message);
 };
 
+void Logger::changeFilePath(IsStringOrLoggerFormat auto format, IsStringOrLoggerFormat auto name) {
+    bool flag = false;
+    if (std::is_same_v<utils::LoggerFormat, decltype(format)>) {
+        if (format != utils::origin) {
+            std::cerr << "invalid parameters" << std::endl;
+            LOG_PATH = "log";
+        }
+    } else {
+        LOG_PATH = name;
+        flag = true;
+    }
+    if (std::is_same_v<utils::LoggerFormat, decltype(name)>) {
+        if (name != utils::origin) {
+            std::cerr << "invalid parameters" << std::endl;
+            LOG_FILE = "log.log";
+        }
+    } else {
+        LOG_FILE = name;
+        flag = true;
+    }
+
+    if (!flag) {
+        return;;
+    }
+
+    if (getInstance()->outFile.is_open()) {
+        getInstance()->outFile.close();
+    }
+    getInstance()->start();
+
+}
 
 
 // 定义宏，方便使用

@@ -20,27 +20,26 @@ namespace windows::wifi {
 
     void freeMemory(PWLAN_AVAILABLE_NETWORK_LIST& pBssList, PWLAN_INTERFACE_INFO_LIST& pIfList);
 
-    // 内部函数类型
-    // 当 fn.first == true时，表明调用此函数的循环提前退出或者直接返回fn.second
+    // The type of function.
+    // When fn.first == true, it means that the loop called this function will exit in advance or will return fn.second.
     using _INTERNAL_APPLY_NETWORK_LIST = std::function<std::pair<bool, bool>(PWLAN_INTERFACE_INFO, PWLAN_AVAILABLE_NETWORK_LIST &)>; // NOLINT(*-reserved-identifier)
 
-    class ApSsidInstance : public Singleton<ApSsidInstance> {
+    class ApSsidInstance final : public Singleton<ApSsidInstance> {
     public:
         // destructor , close handle and so on.
-        ~ApSsidInstance();
+        ~ApSsidInstance() override;
 
         void CvNotify();
 
         /**
-         * 由于可能前面扫描与第二次扫描的时间差距比较大，wifi可能被动关闭等等很多情况，所以每次都会初始化手柄，从头开始
          * @return if we scan successfully, it will return true.
          */
         bool GetSsidList();
 
         /**
          *
-         * @param index int, 表示ssid的第i个元素 连接该wifi
-         * @return 连接成功返回true
+         * @param index int, ssidList[index]
+         * @return It will return ture if we connect it successfully.
          */
         bool connectToWifi(int index);
 
@@ -50,14 +49,15 @@ namespace windows::wifi {
         void showSsidListWithIndex() const;
 
     private:
-        // 初始化手柄
+        // Initial handle
         bool InitialHandle();
 
         /**
-         * 获取接口列表以及可用网络列表, 并执行fn
+         * Get the interface info list and available network list.
+         * And excute the function fn.
          * @param pBssList
          * @param pIfList
-         * @param fn 如果fn 返回真，那么在循环中会提前退出，否则不会
+         * @param fn If fn returns true, it will exit in advance in the loop.
          */
         bool getNetworkAndInterfaceList(
             PWLAN_AVAILABLE_NETWORK_LIST& pBssList,
@@ -68,10 +68,18 @@ namespace windows::wifi {
         bool connectToWifi(const std::string& targetSsid);
 
         // connecting to Wi-Fi
-        [[nodiscard]] bool connectingWifi(const PWLAN_AVAILABLE_NETWORK_LIST &pNetworkList, const std::string& targetSsid, const PWLAN_INTERFACE_INFO &info) const;
+        bool connectingWifi(const PWLAN_AVAILABLE_NETWORK_LIST &pNetworkList, const std::string& targetSsid, const PWLAN_INTERFACE_INFO &info);
 
-        // 插入到 ssidList set 中
+        // inset into ssidList
         void insertWifi(const PWLAN_AVAILABLE_NETWORK_LIST& pBssList);
+
+        // set profile
+        bool setWifiProfile(const PWLAN_INTERFACE_INFO &info, const std::string& profile);
+
+        [[nodiscard]] bool deleteProfile(const PWLAN_INTERFACE_INFO& info, const std::string& ssid) const;
+
+        // check whether the profile exist or not.
+        [[nodiscard]] bool profileExisted(const PWLAN_INTERFACE_INFO &info, const std::string& ssid) const;
 
         HANDLE wlanHandle = nullptr;
         std::mutex mtx;

@@ -34,7 +34,7 @@ public:
     }
 
     // ÐèÒª±»¼Ì³Ð
-    ~Singleton() {
+    virtual ~Singleton() {
         std::cout << "this is singleton destruct" << std::endl;
     }
 };
